@@ -325,7 +325,7 @@ function Contact() {
           ) : (
             <form onSubmit={submit} className="space-y-6" noValidate>
               <h3 className="text-3xl">Appointment enquiry</h3>
-              {[["name", "Full name", "text"], ["phone", "Phone number", "tel"]].map(([n, l, t]) => (
+              {([["name", "Full name", "text"], ["phone", "Phone number", "tel"]] as const).map(([n, l, t]) => (
                 <div key={n}>
                   <input name={n} type={t} placeholder={l} maxLength={100} className={field} />
                   {errors[n] && <p className="mt-1 text-xs text-destructive">{errors[n]}</p>}
@@ -337,7 +337,7 @@ function Contact() {
                   {SERVICES.map((s) => <option key={s.title}>{s.title}</option>)}
                   <option>Not sure yet</option>
                 </select>
-                {errors.service && <p className="mt-1 text-xs text-destructive">{errors.service}</p>}
+                {errors["service"] && <p className="mt-1 text-xs text-destructive">{errors["service"]}</p>}
               </div>
               <input name="date" type="date" className={field} />
               <textarea name="message" rows={3} placeholder="Anything Dimpho should know?" maxLength={1000} className={field} />
