@@ -356,7 +356,12 @@ function Contact() {
           {sent ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <h3 className="text-3xl">Thank you</h3>
-              <p className="mt-4 text-muted-foreground">Your enquiry is ready. Dimpho will be in touch to confirm your appointment.</p>
+              <p className="mt-4 text-muted-foreground">Your enquiry has been sent. Dimpho will be in touch to confirm your appointment.</p>
+              {CONTACT.whatsapp && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  If WhatsApp didn't open, <a href={waLink()} target="_blank" rel="noopener" className="underline underline-offset-4 transition-colors hover:text-gold">tap here to send your message</a>.
+                </p>
+              )}
               <button onClick={() => setSent(false)} className={`${btnOutline} mt-8`}>Send another</button>
             </div>
           ) : (
@@ -378,7 +383,8 @@ function Contact() {
               </div>
               <input name="date" type="date" className={field} />
               <textarea name="message" rows={3} placeholder="Anything Dimpho should know?" maxLength={1000} className={field} />
-              <button type="submit" className={`${btnPrimary} w-full`}>Send enquiry</button>
+              {sendError && <p className="text-sm text-destructive">{sendError}</p>}
+              <button type="submit" disabled={sending} className={`${btnPrimary} w-full disabled:opacity-60`}>{sending ? "Sending…" : "Send enquiry"}</button>
             </form>
           )}
         </div>
