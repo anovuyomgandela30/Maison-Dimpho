@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { submitBookingRequest } from "@/lib/booking.functions";
 import hero from "@/assets/hero.jpg";
 import room from "@/assets/room.jpg";
 import products from "@/assets/products.jpg";
@@ -272,10 +274,13 @@ const schema = z.object({
 });
 
 function Contact() {
+  const submitFn = useServerFn(submitBookingRequest);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const submit = (e: FormEvent<HTMLFormElement>) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
     const r = schema.safeParse(data);
@@ -284,7 +289,26 @@ function Contact() {
       return;
     }
     setErrors({});
+    setSending(true);
+    setSendError(null);
     const v = r.data;
+    // The success screen only appears once the enquiry has actually been
+    // handed off — stored server-side, and the WhatsApp message opened when
+    // WhatsApp booking is set up.
+    let stored = false;
+    let failure: string | null = null;
+    try {
+      const res = await submitFn({ data: { ...v, date: v.date || undefined } });
+      stored = res.ok;
+      if (!res.ok) failure = res.error;
+    } catch {
+      failure = "Sorry — your enquiry didn't go through. Please try again, or contact Dimpho directly using the details on the left.";
+    }
+    setSending(false);
+    if (!stored) {
+      setSendError(failure);
+      return;
+    }
     const msg = `Hello Dimpho, I'd like to book an appointment.\nName: ${v.name}\nPhone: ${v.phone}\nService: ${v.service}\nPreferred date: ${v.date || "-"}\n${v.message || ""}`;
     if (CONTACT.whatsapp) window.open(waLink(msg), "_blank", "noopener");
     setSent(true);
@@ -298,12 +322,25 @@ function Contact() {
         <div>
           <p className="eyebrow mb-4">Book &amp; contact</p>
           <h2 className="text-4xl md:text-5xl">Reserve your <em className="text-gold">moment</em>.</h2>
+          {CONTACT.whatsapp ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Sending the enquiry form opens WhatsApp with your details already filled in — just press send, and Dimpho will confirm your time.
+            </p>
+          ) : (
+            <p className="mt-4 border-l-2 border-gold/60 pl-4 text-sm leading-relaxed text-muted-foreground">
+              WhatsApp booking isn't set up yet. Please send your enquiry with the form instead — it reaches Dimpho directly and she'll confirm your appointment.
+            </p>
+          )}
           <ol className="mt-8 space-y-3 text-sm text-muted-foreground">
-            <li>1. Send an enquiry or message on WhatsApp.</li>
+            <li>1. {CONTACT.whatsapp ? "Send the enquiry form — it opens WhatsApp with your details." : "Fill in the enquiry form."}</li>
             <li>2. Dimpho will confirm your time and treatment.</li>
             <li>3. Arrive, relax, and enjoy.</li>
           </ol>
-          <a href={waLink()} target={CONTACT.whatsapp ? "_blank" : undefined} rel="noopener" className={`${btnPrimary} mt-10`}>Book on WhatsApp</a>
+          {CONTACT.whatsapp ? (
+            <a href={waLink()} target="_blank" rel="noopener" className={`${btnPrimary} mt-10`}>Book on WhatsApp</a>
+          ) : (
+            <a href="#appointment-form" className={`${btnPrimary} mt-10`}>Send an enquiry</a>
+          )}
           <dl className="mt-12 grid grid-cols-2 gap-6 text-sm">
             {[["Phone", CONTACT.phone], ["Email", CONTACT.email], ["Studio", CONTACT.address], ["Hours", CONTACT.hours]].map(([k, v]) => (
               <div key={k}>
@@ -315,11 +352,16 @@ function Contact() {
           <div className="mt-10"><Socials /></div>
         </div>
 
-        <div className="bg-card p-8 md:p-12">
+        <div id="appointment-form" className="bg-card p-8 md:p-12">
           {sent ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <h3 className="text-3xl">Thank you</h3>
-              <p className="mt-4 text-muted-foreground">Your enquiry is ready. Dimpho will be in touch to confirm your appointment.</p>
+              <p className="mt-4 text-muted-foreground">Your enquiry has been sent. Dimpho will be in touch to confirm your appointment.</p>
+              {CONTACT.whatsapp && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  If WhatsApp didn't open, <a href={waLink()} target="_blank" rel="noopener" className="underline underline-offset-4 transition-colors hover:text-gold">tap here to send your message</a>.
+                </p>
+              )}
               <button onClick={() => setSent(false)} className={`${btnOutline} mt-8`}>Send another</button>
             </div>
           ) : (
@@ -341,7 +383,8 @@ function Contact() {
               </div>
               <input name="date" type="date" className={field} />
               <textarea name="message" rows={3} placeholder="Anything Dimpho should know?" maxLength={1000} className={field} />
-              <button type="submit" className={`${btnPrimary} w-full`}>Send enquiry</button>
+              {sendError && <p className="text-sm text-destructive">{sendError}</p>}
+              <button type="submit" disabled={sending} className={`${btnPrimary} w-full disabled:opacity-60`}>{sending ? "Sending…" : "Send enquiry"}</button>
             </form>
           )}
         </div>

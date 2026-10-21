@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture rules
+
+- Enquiry-form submissions are stored server-side in `public.booking_requests` via `src/lib/booking.functions.ts` (service-role insert; RLS enabled with no anon policies, so anonymous visitors can never read or modify submissions). Never make the form client-state-only or show a success message before the submission is stored — leads must never be lost silently.
