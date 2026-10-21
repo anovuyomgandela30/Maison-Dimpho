@@ -6,10 +6,13 @@ const bookingSchema = z.object({
   name: z.string().trim().min(1).max(100),
   phone: z.string().trim().min(6).max(30),
   service: z.string().trim().min(1).max(120),
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
-    .optional(),
+  date: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+      .optional(),
+  ),
   message: z.string().trim().max(1000).optional(),
 });
 

@@ -298,7 +298,7 @@ function Contact() {
     let stored = false;
     let failure: string | null = null;
     try {
-      const res = await submitFn({ data: v });
+      const res = await submitFn({ data: { ...v, date: v.date || undefined } });
       stored = res.ok;
       if (!res.ok) failure = res.error;
     } catch {
