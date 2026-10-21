@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { submitBookingRequest } from "@/lib/booking.functions";
 import hero from "@/assets/hero.jpg";
 import room from "@/assets/room.jpg";
 import products from "@/assets/products.jpg";
@@ -272,10 +274,13 @@ const schema = z.object({
 });
 
 function Contact() {
+  const submitFn = useServerFn(submitBookingRequest);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const submit = (e: FormEvent<HTMLFormElement>) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
     const r = schema.safeParse(data);
@@ -284,7 +289,26 @@ function Contact() {
       return;
     }
     setErrors({});
+    setSending(true);
+    setSendError(null);
     const v = r.data;
+    // The success screen only appears once the enquiry has actually been
+    // handed off — stored server-side, and the WhatsApp message opened when
+    // WhatsApp booking is set up.
+    let stored = false;
+    let failure: string | null = null;
+    try {
+      const res = await submitFn({ data: v });
+      stored = res.ok;
+      if (!res.ok) failure = res.error;
+    } catch {
+      failure = "Sorry — your enquiry didn't go through. Please try again, or contact Dimpho directly using the details on the left.";
+    }
+    setSending(false);
+    if (!stored) {
+      setSendError(failure);
+      return;
+    }
     const msg = `Hello Dimpho, I'd like to book an appointment.\nName: ${v.name}\nPhone: ${v.phone}\nService: ${v.service}\nPreferred date: ${v.date || "-"}\n${v.message || ""}`;
     if (CONTACT.whatsapp) window.open(waLink(msg), "_blank", "noopener");
     setSent(true);
