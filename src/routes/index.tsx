@@ -322,12 +322,25 @@ function Contact() {
         <div>
           <p className="eyebrow mb-4">Book &amp; contact</p>
           <h2 className="text-4xl md:text-5xl">Reserve your <em className="text-gold">moment</em>.</h2>
+          {CONTACT.whatsapp ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Sending the enquiry form opens WhatsApp with your details already filled in — just press send, and Dimpho will confirm your time.
+            </p>
+          ) : (
+            <p className="mt-4 border-l-2 border-gold/60 pl-4 text-sm leading-relaxed text-muted-foreground">
+              WhatsApp booking isn't set up yet. Please send your enquiry with the form instead — it reaches Dimpho directly and she'll confirm your appointment.
+            </p>
+          )}
           <ol className="mt-8 space-y-3 text-sm text-muted-foreground">
-            <li>1. Send an enquiry or message on WhatsApp.</li>
+            <li>1. {CONTACT.whatsapp ? "Send the enquiry form — it opens WhatsApp with your details." : "Fill in the enquiry form."}</li>
             <li>2. Dimpho will confirm your time and treatment.</li>
             <li>3. Arrive, relax, and enjoy.</li>
           </ol>
-          <a href={waLink()} target={CONTACT.whatsapp ? "_blank" : undefined} rel="noopener" className={`${btnPrimary} mt-10`}>Book on WhatsApp</a>
+          {CONTACT.whatsapp ? (
+            <a href={waLink()} target="_blank" rel="noopener" className={`${btnPrimary} mt-10`}>Book on WhatsApp</a>
+          ) : (
+            <a href="#appointment-form" className={`${btnPrimary} mt-10`}>Send an enquiry</a>
+          )}
           <dl className="mt-12 grid grid-cols-2 gap-6 text-sm">
             {[["Phone", CONTACT.phone], ["Email", CONTACT.email], ["Studio", CONTACT.address], ["Hours", CONTACT.hours]].map(([k, v]) => (
               <div key={k}>
@@ -339,7 +352,7 @@ function Contact() {
           <div className="mt-10"><Socials /></div>
         </div>
 
-        <div className="bg-card p-8 md:p-12">
+        <div id="appointment-form" className="bg-card p-8 md:p-12">
           {sent ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <h3 className="text-3xl">Thank you</h3>
